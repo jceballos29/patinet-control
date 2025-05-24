@@ -1,4 +1,4 @@
-import { PrismaClient, GlobalRoleName } from './generated'
+import { PrismaClient, GlobalRoleName } from '@/prisma/generated'
 import * as bcrypt from 'bcrypt'
 import * as dotenv from 'dotenv'
 
