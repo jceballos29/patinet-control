@@ -6,10 +6,133 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
+  output   = "../prisma/generated"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Office {
+  id           String   @id @default(cuid())
+  name         String   @unique
+
+  workStartTime DateTime
+  workEndTime   DateTime
+  workDays      DayOfWeek[]
+
+  jobPositions JobPosition[]
+  users        UserOffice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("offices")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  firstName    String
+  lastName     String
+  
+  isActive     Boolean  @default(true)
+  globalRoleId String
+  globalRole   GlobalRole @relation(fields: [globalRoleId], references: [id])
+
+  offices      UserOffice[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model GlobalRole {
+  id   String @id @default(cuid())
+  name GlobalRoleName @unique
+
+  users User[]
+
+  @@map("global_roles")
+}
+
+model JobPosition {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+
+  officeId    String
+  office      Office   @relation(fields: [officeId], references: [id])
+
+  permissions JobPositionPermission[]
+  users       UserOffice[]
+
+  isOfficeAdmin Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([officeId, title])
+  @@unique([officeId, isOfficeAdmin])
+
+  @@map("job_positions")
+}
+
+model JobPositionPermission {
+  jobPositionId String
+  jobPosition   JobPosition @relation(fields: [jobPositionId], references: [id])
+
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([jobPositionId, permissionId])
+  @@map("job_position_permissions")
+}
+
+model Permission {
+  id   String @id @default(cuid())
+  name String @unique
+  description String?
+
+  jobPositionPermissions JobPositionPermission[]
+
+  @@map("permissions")
+}
+
+model UserOffice {
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+
+  officeId    String
+  office      Office @relation(fields: [officeId], references: [id])
+
+  jobPositionId String?
+  jobPosition   JobPosition? @relation(fields: [jobPositionId], references: [id])
+
+  isActive    Boolean @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@id([userId, officeId])
+  @@map("user_offices")
+}
+
+enum GlobalRoleName {
+  SUPER_ADMIN
+  ADMIN
+  EMPLOYEE
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
